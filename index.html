@@ -139,7 +139,7 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 const PIPS=[[],[4],[0,8],[0,4,8],[0,2,6,8],[0,2,4,6,8],[0,2,3,5,6,8]];
 const face=n=>{$('#dice').innerHTML=(PIPS[n]||[]).map(i=>`<i style="left:${16+25*(i%3)}%;top:${16+25*(i/3|0)}%"></i>`).join('')};face(0);
 EM.forEach((e,i)=>{const b=document.createElement('button');b.textContent=e;b.type='button';b.onclick=()=>send({t:'e',x:i});$('#em').append(b)});
-function lobbyUI(){const lv=names.map((n,i)=>n?i:-1).filter(i=>i>=0),cm=lv.length==2?{[lv[0]]:0,[lv[1]]:2}:{};$('#hint').textContent=lv.length==2?'With 2 players you sit opposite each other.':'';
+function lobbyUI(){const lv=names.map((n,i)=>n?i:-1).filter(i=>i>=0),cm=lv.length==2?{[lv[0]]:1,[lv[1]]:3}:{};$('#hint').textContent=lv.length==2?'With 2 players you sit opposite each other.':'';
   $('#seats').innerHTML=names.map((n,i)=>`<div class="row"><i style="background:${COL[i in cm?cm[i]:i]}"></i>${n?E(n)+(i==me?' (you)':'')+(i==host?' 👑':''):'<span>Waiting…</span>'}</div>`).join('');
   const n=names.filter(Boolean).length,h=me==host;
   $('#go').style.display=h?'':'none';$('#go').disabled=n<2;$('#go').textContent=n<2?'Waiting for players…':'Start game';

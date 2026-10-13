@@ -42,7 +42,7 @@ function handle(ws,m){
       if(ws.i!==R.host||R.on===1)return;
       const hp=R.s[R.host],a=R.s.filter(p=>p&&!p.gone);
       if(a.length<2)return;
-      R.s=a.length===2?[a[0],null,a[1],null]:R.s.map(p=>p&&!p.gone?p:null);
+      R.s=a.length===2?[null,a[0],null,a[1]]:R.s.map(p=>p&&!p.gone?p:null);
       R.s.forEach((p,i)=>{if(p)p.ws.i=i});R.host=R.s.indexOf(hp);
       R.on=1;R.tk=R.s.map(p=>p&&[-1,-1,-1,-1]);R.turn=live(R)[0];R.dice=0;R.mv=[];
       return R.s.forEach((p,i)=>p&&tx(p.ws,{t:'g',p:names(R),s:R.turn,me:i,h:R.host}));
