@@ -1,6 +1,7 @@
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),{WebSocketServer}=require('ws');
-const page=fs.readFileSync(path.join(__dirname,'index.html'));
-const srv=http.createServer((q,r)=>{if(q.url==='/health')return r.end('ok');r.writeHead(200,{'Content-Type':'text/html;charset=utf-8'});r.end(page)});
+const F={'/':['index.html','text/html;charset=utf-8'],'/manifest.webmanifest':['manifest.webmanifest','application/manifest+json'],'/sw.js':['sw.js','text/javascript'],'/icon-192.png':['icon-192.png','image/png'],'/icon-512.png':['icon-512.png','image/png'],'/icon-maskable-512.png':['icon-maskable-512.png','image/png']};
+for(const k in F)F[k][0]=fs.readFileSync(path.join(__dirname,F[k][0]));
+const srv=http.createServer((q,r)=>{const u=q.url.split('?')[0];if(u==='/health')return r.end('ok');const f=F[u];if(!f){r.writeHead(404);return r.end()}r.writeHead(200,{'Content-Type':f[1],'Cache-Control':'no-cache'});r.end(f[0])});
 const wss=new WebSocketServer({server:srv,maxPayload:512});
 const rooms=new Map(),START=[1,14,27,40],SAFE=new Set([1,14,27,40,9,22,35,48]),AL='ABCDEFGHJKMNPQRSTUVWXYZ';
 const newCode=()=>{let c;do{c=Array.from({length:4},()=>AL[crypto.randomInt(AL.length)]).join('')}while(rooms.has(c));return c};
@@ -39,10 +40,12 @@ function handle(ws,m){
   switch(m.t){
     case's':{
       if(ws.i!==R.host||R.on===1)return;
-      R.s=R.s.map(p=>p&&!p.gone?p:null);
-      if(live(R).length<2)return;
+      const hp=R.s[R.host],a=R.s.filter(p=>p&&!p.gone);
+      if(a.length<2)return;
+      R.s=a.length===2?[a[0],null,a[1],null]:R.s.map(p=>p&&!p.gone?p:null);
+      R.s.forEach((p,i)=>{if(p)p.ws.i=i});R.host=R.s.indexOf(hp);
       R.on=1;R.tk=R.s.map(p=>p&&[-1,-1,-1,-1]);R.turn=live(R)[0];R.dice=0;R.mv=[];
-      return bc(R,{t:'g',p:names(R),s:R.turn});
+      return R.s.forEach((p,i)=>p&&tx(p.ws,{t:'g',p:names(R),s:R.turn,me:i,h:R.host}));
     }
     case'r':{
       if(R.on!==1||ws.i!==R.turn||R.dice)return;
