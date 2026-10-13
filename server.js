@@ -1,5 +1,5 @@
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),{WebSocketServer}=require('ws');
-const F={'/':['index.html','text/html;charset=utf-8'],'/manifest.webmanifest':['manifest.webmanifest','application/manifest+json'],'/sw.js':['sw.js','text/javascript'],'/icon-192.png':['icon-192.png','image/png'],'/icon-512.png':['icon-512.png','image/png'],'/icon-maskable-512.png':['icon-maskable-512.png','image/png']};
+const F={'/':['index.html','text/html;charset=utf-8'],'/manifest.webmanifest':['manifest.webmanifest','application/manifest+json'],'/sw.js':['sw.js','text/javascript'],'/privacy':['privacy.html','text/html;charset=utf-8'],'/icon-192.png':['icon-192.png','image/png'],'/icon-512.png':['icon-512.png','image/png'],'/icon-maskable-512.png':['icon-maskable-512.png','image/png']};
 for(const k in F)F[k][0]=fs.readFileSync(path.join(__dirname,F[k][0]));
 const srv=http.createServer((q,r)=>{const u=q.url.split('?')[0];if(u==='/health')return r.end('ok');const f=F[u];if(!f){r.writeHead(404);return r.end()}r.writeHead(200,{'Content-Type':f[1],'Cache-Control':'no-cache'});r.end(f[0])});
 const wss=new WebSocketServer({server:srv,maxPayload:512});
@@ -11,6 +11,10 @@ const names=R=>R.s.map(p=>p?p.n:0);
 const lobby=R=>R.s.forEach((p,i)=>p&&tx(p.ws,{t:'l',c:R.c,me:i,h:R.host,p:names(R)}));
 const live=R=>R.s.map((p,i)=>p&&!p.gone?i:-1).filter(i=>i>=0);
 
+const BAD=['fuck','shit','bitch','bastard','asshole','cunt','slut','whore','madarchod','bhenchod','chutiya','gandu','harami','thendi','sharmouta'];
+const LK={a:'a@4',i:'i1!',o:'o0',e:'e3',s:'s$5',t:'t7'};
+const RX=new RegExp('(?<![a-z])(?:'+BAD.map(w=>[...w].map(c=>'['+(LK[c]||c).replace('$','\\$')+']').join('[\\W_]*')).join('|')+')','gi');
+const clean=t=>t.replace(RX,m=>'*'.repeat(m.length));
 function next(R,again){
   R.dice=0;R.mv=[];
   if(!again){do R.turn=(R.turn+1)%4;while(!R.s[R.turn]||R.s[R.turn].gone)}
@@ -31,7 +35,7 @@ function handle(ws,m){
     if(r.on)return tx(ws,{t:'err',m:'Game already started'});
     const i=r.s.indexOf(null);
     if(i<0)return tx(ws,{t:'err',m:'Room is full'});
-    r.s[i]={ws,n:String(m.n||'Player').slice(0,12),gone:0};ws.R=r;ws.i=i;ws.lc=0;
+    r.s[i]={ws,n:clean(String(m.n||'Player').slice(0,12)),gone:0};ws.R=r;ws.i=i;ws.lc=0;
     if(!m.c)r.host=i;
     return lobby(r);
   }
@@ -71,7 +75,7 @@ function handle(ws,m){
       return next(R,v===6||cap.length>0||p===56);
     }
     case'c':{
-      const x=String(m.x||'').trim().slice(0,120);
+      const x=clean(String(m.x||'').trim().slice(0,120));
       if(!x||now-ws.lc<700)return;ws.lc=now;
       return bc(R,{t:'c',s:ws.i,x});
     }

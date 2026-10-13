@@ -39,7 +39,7 @@ input:focus{box-shadow:0 0 0 2px #007aff88}
 #log{height:84px;overflow:auto;background:var(--card);border-radius:14px;padding:8px 12px;font-size:14px}#log p{margin:2px 0;word-break:break-word}
 #em{display:flex;gap:4px;overflow:auto;margin:8px 0}#em button{border:0;background:var(--card);border-radius:12px;font-size:22px;padding:6px 10px}#em button:active{transform:scale(.85)}
 #cf{display:flex;gap:8px}#cf .btn{width:auto;margin:0;padding:0 18px}
-#win{position:fixed;inset:0;display:none;place-items:center;background:#0008;backdrop-filter:blur(10px);z-index:9}#win.on{display:grid}#win .card{text-align:center;width:min(86vw,340px)}#win h2{font-size:28px;margin:6px 0 4px}
+#win,#rules{position:fixed;inset:0;display:none;place-items:center;background:#0008;backdrop-filter:blur(10px);z-index:9}#win.on,#rules.on{display:grid}#win .card{text-align:center}#win .card,#rules .card{width:min(86vw,340px)}#win h2,#rules h2{font-size:26px;margin:6px 0 8px}#rules{z-index:18}#rules ul{margin:0;padding-left:20px;line-height:1.5;font-size:15px}.note a{color:#007aff}.lk{width:100%;border:0;background:none;color:var(--tx);font:inherit;text-decoration:none;text-align:left}.lk span{color:var(--sub)}.foot{text-align:center;font-size:13px;color:var(--sub);margin:14px 0 0}.foot a{color:var(--sub)}
 #toast{position:fixed;top:calc(env(safe-area-inset-top) + 10px);left:50%;transform:translate(-50%,-80px);background:#000c;color:#fff;border-radius:20px;padding:10px 18px;font-size:14px;transition:.3s;z-index:20;backdrop-filter:blur(10px)}#toast.on{transform:translate(-50%,0)}
 #mu,#gear{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 10px);border:0;background:var(--card);border-radius:50%;width:36px;height:36px;font-size:16px;z-index:8;box-shadow:0 1px 4px #0003}
 #gear{left:12px;right:auto}.fair{margin:0 auto 20px;width:fit-content;max-width:100%;background:var(--card);border-radius:20px;padding:7px 14px;font-size:13px;font-weight:600;text-align:center;box-shadow:0 1px 3px #0001}.note{margin:0;padding:12px 16px;font-size:14px;line-height:1.45;color:var(--sub)}
@@ -61,7 +61,7 @@ input:focus{box-shadow:0 0 0 2px #007aff88}
 <div class="scr on" id="home"><h1>NoScript Ludo</h1><p class="sub" style="margin-bottom:10px">Every roll is real.</p><div class="fair">🎲 Fair dice · secure random rolls · no scripts</div>
 <div class="card"><input id="nm" placeholder="Your name" maxlength="12" autocomplete="off">
 <button class="btn" id="mk">Create room</button><div class="or">or join a friend's room</div>
-<input id="cd" placeholder="CODE" maxlength="4" autocomplete="off"><button class="btn g" id="jn">Join room</button></div></div>
+<input id="cd" placeholder="CODE" maxlength="4" autocomplete="off"><button class="btn g" id="jn">Join room</button></div><p class="foot"><a href="/privacy" target="_blank">Privacy &amp; terms</a> · <a href="#" id="rl">Chat rules</a></p></div>
 
 <div class="scr" id="lobby"><h1 style="margin-top:20px">Lobby</h1><p class="sub">Share the code or link with up to 3 friends</p>
 <div class="card"><div class="big" id="code"></div><button class="btn g" id="inv" style="margin:0 0 10px">Invite friends</button><div id="seats"></div><p class="sub" id="hint" style="margin:10px 0 0;font-size:14px"></p>
@@ -75,11 +75,12 @@ input:focus{box-shadow:0 0 0 2px #007aff88}
 
 <div id="win"><div class="card"><div style="font-size:60px">🏆</div><h2 id="wn"></h2><p class="sub" id="wm"></p><button class="btn" id="again">Play again</button></div></div>
 
+<div id="rules"><div class="card"><h2 style="text-align:center">💬 Chat rules</h2><ul><li>Be respectful. No insults, threats, hate or harassment.</li><li>Don't share private details like phone numbers or addresses.</li><li>No sexual, illegal or offensive content.</li></ul><p class="note" style="padding:10px 0 14px">Abusive words are hidden automatically. Tap a player's name above the board to mute them. By playing you agree to the <a href="/privacy" target="_blank">Privacy &amp; terms</a>.</p><button class="btn" id="ok" type="button" style="margin:0">I agree</button></div></div>
 <div id="set"><div class="sheet"><div class="hd"><b>Settings</b><button type="button" id="sx">Done</button></div><div id="sl"></div><button class="btn g" id="rs" type="button" style="margin-top:18px">Reset to defaults</button></div></div>
 <script>
 const $=s=>document.querySelector(s),ST=[1,14,27,40],SAFE=[1,14,27,40,9,22,35,48],COL=['#ff3b30','#34c759','#007aff','#ffcc00'],EM=['😂','😍','😡','😭','👏','🔥','😎','🤯'];
 const E=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt()+';'),sleep=ms=>new Promise(r=>setTimeout(r,ms));
-let S,me=-1,host=0,names=[],tk=[],gone=[],turn=-1,mv=[],rolled=0,els=[],mute=0,rt=0,t0=0,lr=[],rto=0,gest=0,mg,mt=0,ms=0,mn=0,wl=0;
+let S,me=-1,host=0,names=[],tk=[],gone=[],turn=-1,mv=[],rolled=0,els=[],mute=0,rt=0,t0=0,lr=[],rto=0,muted=[],gest=0,mg,mt=0,ms=0,mn=0,wl=0;
 const DEF={mus:1,musV:.5,sfx:1,sfxV:.8,vib:1,theme:'auto',fast:0,auto:1,chat:1,wake:1};let cfg=Object.assign({},DEF);try{Object.assign(cfg,JSON.parse(localStorage['ludo.cfg']))}catch{}
 const sp=()=>cfg.fast?.55:1,vib=p=>{try{cfg.vib&&!mute&&navigator.vibrate&&navigator.vibrate(p)}catch{}};
 // board geometry
@@ -124,9 +125,14 @@ function setUI(){let h='',op=0;OPT.forEach(([k,l,t,o])=>{
   h+=t=='t'?`<label class="r">${l}<span class="sw"><input type="checkbox" data-k="${k}" ${cfg[k]?'checked':''}><i></i></span></label>`
    :t=='r'?`<label class="r">${l}<input type="range" min="0" max="1" step=".05" data-k="${k}" value="${cfg[k]}"></label>`
    :`<div class="r">${l}<div class="seg">${o.map(([v,n])=>`<button type="button" data-k="${k}" data-v="${v}" class="${cfg[k]==v?'on':''}">${n}</button>`).join('')}</div></div>`});
-  $('#sl').innerHTML=h+'</div><h3>Fair dice</h3><div class="grp"><p class="note">Every roll is generated on the game server by a secure random generator. There are no scripts and no fixed outcomes: each number from 1 to 6 is equally likely, every single time.</p></div>'}
+  $('#sl').innerHTML=h+'</div><h3>Fair dice</h3><div class="grp"><p class="note">Every roll is generated on the game server by a secure random generator. There are no scripts and no fixed outcomes: each number from 1 to 6 is equally likely, every single time.</p></div><h3>About</h3><div class="grp"><button type="button" class="r lk" data-a="rules">Chat rules<span>›</span></button><a class="r lk" href="/privacy" target="_blank">Privacy &amp; terms<span>›</span></a></div>'}
 $('#sl').addEventListener('input',e=>{const t=e.target,k=t.dataset.k;if(!k)return;cfg[k]=t.type=='checkbox'?+t.checked:+t.value;apply();if(k=='sfxV')snd.tick()});
 $('#sl').addEventListener('click',e=>{const t=e.target,k=t.dataset.k;if(!k||t.dataset.v==null)return;cfg[k]=k=='theme'?t.dataset.v:+t.dataset.v;apply();setUI()});
+const showRules=()=>$('#rules').classList.add('on');
+$('#ok').onclick=()=>{$('#rules').classList.remove('on');try{localStorage['ludo.rules']=1}catch{}};
+$('#rl').onclick=e=>{e.preventDefault();showRules()};
+$('#sl').addEventListener('click',e=>{if(e.target.closest('[data-a=rules]'))showRules()});
+$('#chips').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;const s=+c.dataset.s;if(s==me)return;muted[s]=!muted[s];chips();toast(names[s]+(muted[s]?' muted':' unmuted'))};
 $('#gear').onclick=()=>{setUI();$('#set').classList.add('on')};$('#sx').onclick=()=>$('#set').classList.remove('on');
 $('#set').onclick=e=>{if(e.target.id=='set')$('#set').classList.remove('on')};
 $('#rs').onclick=()=>{cfg=Object.assign({},DEF);apply();setUI()};
@@ -144,7 +150,7 @@ function lobbyUI(){const lv=names.map((n,i)=>n?i:-1).filter(i=>i>=0),cm=lv.lengt
   const n=names.filter(Boolean).length,h=me==host;
   $('#go').style.display=h?'':'none';$('#go').disabled=n<2;$('#go').textContent=n<2?'Waiting for players…':'Start game';
 }
-function chips(){$('#chips').innerHTML=names.map((n,i)=>n?`<div class="chip ${i==turn?'on':''} ${gone[i]?'x':''}" style="--c:${COL[i]}"><i></i><span class="n">${E(n)}</span>${lr[i]?`<b>🎲${lr[i]}</b>`:''}</div>`:'').join('')}
+function chips(){$('#chips').innerHTML=names.map((n,i)=>n?`<div class="chip ${i==turn?'on':''} ${gone[i]?'x':''}" data-s="${i}" style="--c:${COL[i]}"><i></i><span class="n">${muted[i]?'🔇 ':''}${E(n)}</span>${lr[i]?`<b>🎲${lr[i]}</b>`:''}</div>`:'').join('')}
 function build(){
   els.flat().forEach(e=>e&&e.remove());els=[];
   tk.forEach((a,s)=>{if(!a)return;els[s]=[];for(let k=0;k<4;k++){const e=document.createElement('div');e.className='tk';e.style.setProperty('--c',COL[s]);e.onclick=()=>{if(s==me&&turn==me&&rolled&&mv.includes(k)){send({t:'m',k});mv=[];hl()}};B.append(e);els[s][k]=e}});
@@ -178,8 +184,8 @@ function go(c){
 }
 async function on(m){switch(m.t){
 case'err':toast(m.m);break;
-case'l':me=m.me;host=m.h;names=m.p;$('#code').textContent=m.c;history.replaceState(0,'','?r='+m.c);lobbyUI();show('lobby');break;
-case'g':names=m.p;me=m.me;host=m.h;lr=[];face(0);gone=[];tk=names.map(n=>n&&[-1,-1,-1,-1]);$('#win').classList.remove('on');build();show('game');turn=-1;await setTurn(m.s);break;
+case'l':try{if(!localStorage['ludo.rules'])showRules()}catch{}me=m.me;host=m.h;names=m.p;$('#code').textContent=m.c;history.replaceState(0,'','?r='+m.c);lobbyUI();show('lobby');break;
+case'g':names=m.p;me=m.me;host=m.h;lr=[];muted=[];face(0);gone=[];tk=names.map(n=>n&&[-1,-1,-1,-1]);$('#win').classList.remove('on');build();show('game');turn=-1;await setTurn(m.s);break;
 case't':await setTurn(m.s);break;
 case'd':{clearTimeout(rto);if(!rt)rattle();await sleep(Math.max(0,520*sp()-(Date.now()-t0)));clearInterval(rt);rt=0;face(m.v);snd.land();if(m.s==me)vib(25);mv=m.m;hl();
   lr[m.s]=m.v;chips();const who=m.s==me?'You':names[m.s];sys('🎲 '+who+' rolled '+m.v);$('#st').textContent=who+' rolled '+m.v+(mv.length?(m.s==me?' — tap a token':''):' — no move');
@@ -193,8 +199,8 @@ case'm':{const{s,k}=m;let p=tk[s][k];mv=[];hl();
 case'q':gone[m.s]=1;host=m.h;lay();chips();toast(names[m.s]+' left the game');break;
 case'x':{await sleep(300);snd.home();$('#wn').textContent=names[m.s]+(m.s==me?' (you) won!':' wins!');
   $('#wm').textContent=me==host?'Ready for another round?':'Waiting for the host to start again…';$('#again').style.display=me==host?'':'none';$('#win').classList.add('on');break}
-case'c':{const p=document.createElement('p'),b=document.createElement('b');b.style.color=COL[m.s];b.textContent=(names[m.s]||'')+' ';p.append(b,m.x);const L=$('#log');L.append(p);while(L.children.length>40)L.firstChild.remove();L.scrollTop=1e9;if(m.s!=me)snd.pop();break}
-case'e':{if(!EM[m.x])break;const d=document.createElement('div');d.className='fl';d.innerHTML=`<b>${EM[m.x]}</b><small>${E(names[m.s]||'')}</small>`;d.style.left=8+Math.random()*68+'%';$('#bw').append(d);snd.pop();setTimeout(()=>d.remove(),2000);break}
+case'c':{if(muted[m.s])break;const p=document.createElement('p'),b=document.createElement('b');b.style.color=COL[m.s];b.textContent=(names[m.s]||'')+' ';p.append(b,m.x);const L=$('#log');L.append(p);while(L.children.length>40)L.firstChild.remove();L.scrollTop=1e9;if(m.s!=me)snd.pop();break}
+case'e':{if(!EM[m.x]||muted[m.s])break;const d=document.createElement('div');d.className='fl';d.innerHTML=`<b>${EM[m.x]}</b><small>${E(names[m.s]||'')}</small>`;d.style.left=8+Math.random()*68+'%';$('#bw').append(d);snd.pop();setTimeout(()=>d.remove(),2000);break}
 }}
 async function setTurn(s){
   turn=s;mv=[];rolled=0;hl();chips();
